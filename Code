@@ -1,0 +1,112 @@
+#include <Arduino.h>
+
+// Pins 
+const int redPin = 3;
+const int greenPin = 5;
+const int bluePin = 6;
+
+// Ultrasonic 
+const int trigPin = 9;
+const int echoPin = 10;
+
+// Buzzer 
+const int buzzer = 7;
+
+long duration;
+int distance;
+int readings[5];   
+int readIndex = 0; 
+int total = 0;     
+int average = 0;  
+
+unsigned long previousMillis = 0;
+const int toggleInterval = 200; 
+bool buzzerState = false;
+
+void setup() {
+  
+  Serial.begin(9600);
+  pinMode(redPin, OUTPUT);
+  pinMode(greenPin, OUTPUT);
+  pinMode(bluePin, OUTPUT);
+
+  // Set pin modes for ultrasonic sensor
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+
+  // Set pin mode for buzzer
+  pinMode(buzzer, OUTPUT);
+
+  // Initialize readings array to 0
+  for (int i = 0; i < 5; i++) {
+    readings[i] = 0;
+  }
+}
+
+void loop() {
+  measureDistance();
+
+  Serial.print("Distance: ");
+  Serial.println(average);
+
+  if (average >= 50) {
+    setColor(0, 255, 0); 
+    noTone(buzzer);      
+  } else if (average < 50 && average > 20) {
+    setColor(255, 255, 0); 
+    noTone(buzzer);        
+  } else if (average <= 20) {
+    setColor(255, 0, 0); 
+    toggleBuzzer();      
+  }
+}
+
+// Function to measure and smooth distance
+void measureDistance() {
+  // Clear the trigPin
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+
+  // Trigger the ultrasonic sensor
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  // Measure the echoPin pulse duration
+  duration = pulseIn(echoPin, HIGH);
+
+  // Calculate the distance in cm
+  distance = duration * 0.034 / 2;
+
+  // Add the new distance to the readings array
+  total -= readings[readIndex];   
+  readings[readIndex] = distance; 
+  total += readings[readIndex];   
+  readIndex = (readIndex + 1) % 5; 
+
+  // Average
+  average = total / 5;
+}
+
+// Function to set RGB LED color
+void setColor(int redValue, int greenValue, int blueValue) {
+  analogWrite(redPin, redValue);
+  analogWrite(greenPin, greenValue);
+  analogWrite(bluePin, blueValue);
+}
+
+// Function to toggle the buzzer on and off
+void toggleBuzzer() {
+  unsigned long currentMillis = millis();
+
+  // Check if it's time to toggle the buzzer state
+  if (currentMillis - previousMillis >= toggleInterval) {
+    previousMillis = currentMillis; 
+    buzzerState = !buzzerState;     
+
+    if (buzzerState) {
+      tone(buzzer, 3000); 
+    } else {
+      noTone(buzzer);     
+    }
+  }
