@@ -1,6 +1,6 @@
 ProximitySensor: The device will trigger an alarm if anyone gets too close.
 
-See it in action here: https://www.instagram.com/p/DEfCzqOyfLK/
+> See it in action here: https://www.instagram.com/p/DEfCzqOyfLK/
 
 You'll need:
 - Arduino Uno
